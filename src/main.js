@@ -1,5 +1,6 @@
 import * as THREE from "https://unpkg.com/three@0.112/build/three.module.js";
 import { GLTFLoader } from "https://unpkg.com/three@0.112/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://unpkg.com/three@0.112/examples/jsm/controls/OrbitControls.js";
 
 const scene = new THREE.Scene();
 
@@ -24,6 +25,17 @@ scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+
+controls.enableDamping = true; 
+controls.dampingFactor = 0.05;
+
+controls.enablePan = false;
+controls.minDistance = 50; 
+controls.maxDistance = 200; 
+controls.maxPolarAngle = Math.PI / 2;
+
 
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
@@ -64,6 +76,7 @@ textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
 
 function animate() {
   requestAnimationFrame(animate);
+   controls.update();
   renderer.render(scene, camera);
 }
 
