@@ -1,7 +1,7 @@
 import * as THREE from "https://unpkg.com/three@0.112/build/three.module.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.112/examples/jsm/loaders/GLTFLoader.js";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x7aadff);
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -25,14 +25,42 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
 
-const floorGeometry = new THREE.BoxGeometry(180, 25, 47);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-const ground = new THREE.Mesh(floorGeometry, floorMaterial);
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
 
-ground.rotation.x = -50;
+  canvas.width = texture.image.width;
+  canvas.height = texture.image.height;
 
-ground.receiveShadow = true;
-scene.add(ground);
+  context.drawImage(texture.image, 0, 0);
+
+  context.fillStyle = "rgba(0, 0, 0, 0.5)"; 
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const darkTexture = new THREE.Texture(canvas);
+  darkTexture.needsUpdate = true;
+
+  scene.background = darkTexture;
+});
+
+
+// const loader = new GLTFLoader();
+// loader.load(
+//   "assets/balde-pegar/scene.gltf",
+//   function (gltf) {
+//       const bucket = gltf.scene;
+//       bucket.scale.set(30, 30, 30);
+//       bucket.position.set(0, 14, 0);
+//       bucket.rotation.y = Math.PI;
+//     scene.add(bucket);
+//   },
+//   undefined,
+//   function (error) {
+//     console.error("Erro ao carregar o modelo GLTF:", error);
+//   }
+// );
+
 
 function animate() {
   requestAnimationFrame(animate);
