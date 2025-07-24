@@ -116,7 +116,7 @@ function moveBandeja(event) {
   bandeja.position.x = THREE.Math.clamp(pos.x, -limiteHorizontal, limiteHorizontal);
 }
 
-// se apertar esc a bandeja para de seguir o mouse //
+// apertar esc para que a bandeja pare de seguir o mouse //
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
   controlesDoMouseAtivos = !controlesDoMouseAtivos;
