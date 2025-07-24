@@ -11,7 +11,7 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 
-camera.position.set(0, 20, 100);
+camera.position.set(0, 15, 40);
 camera.lookAt(0, 60, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -73,6 +73,63 @@ textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
 //   }
 // );
 
+const textureLoaderbandeja = new THREE.TextureLoader();
+const bandejaTextura = textureLoaderbandeja.load("assets/balde-pegar/textures/Plastic_Bucket_baseColor.png");
+const bandeja = new THREE.Group();
+const bandejaMaterial = new THREE.MeshStandardMaterial({ map: bandejaTextura });
+        
+const baseGeo = new THREE.BoxGeometry(15, 1, 8);
+const base = new THREE.Mesh(baseGeo, bandejaMaterial);
+bandeja.add(base);
+
+const paredeTrasGeo = new THREE.BoxGeometry(15, 5, 1);
+const paredeTras = new THREE.Mesh(paredeTrasGeo, bandejaMaterial);
+paredeTras.position.set(0, 3, -3.5);
+bandeja.add(paredeTras);
+
+const paredeLadoGeo = new THREE.BoxGeometry(1, 5, 8);
+const paredeEsquerda = new THREE.Mesh(paredeLadoGeo, bandejaMaterial);
+paredeEsquerda.position.set(-7, 3, 0);
+bandeja.add(paredeEsquerda);
+        
+const paredeDireita = new THREE.Mesh(paredeLadoGeo, bandejaMaterial);
+paredeDireita.position.set(7, 3, 0);
+bandeja.add(paredeDireita);
+        
+bandeja.position.set(0, -20, 1);
+scene.add(bandeja);
+
+// controle da bandeja com o mouse //
+let controlesDoMouseAtivos = true;
+
+function moveBandeja(event) {
+  if (!controlesDoMouseAtivos) {
+    return;
+  }
+  const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+  const vector = new THREE.Vector3(mouseX, 0, 0.5);
+  vector.unproject(camera);
+  const dir = vector.sub(camera.position).normalize();
+  const distance = -camera.position.z / dir.z;
+  const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+  const limiteHorizontal = 35;
+  bandeja.position.x = THREE.Math.clamp(pos.x, -limiteHorizontal, limiteHorizontal);
+}
+
+// se apertar esc a bandeja para de seguir o mouse //
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+  controlesDoMouseAtivos = !controlesDoMouseAtivos;
+  const infoElement = document.getElementById('info');
+  if (controlesDoMouseAtivos) {
+    infoElement.textContent = "Mova o mouse para controlar a bandeja e pressione ESC para pausar)";
+  } else {
+    infoElement.textContent = "Controle pausado, pressione ESC para retomar.";
+    }
+  }
+});
+
+window.addEventListener('mousemove', moveBandeja);
 
 function animate() {
   requestAnimationFrame(animate);
@@ -81,3 +138,10 @@ function animate() {
 }
 
 animate();
+
+// responsividade // 
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
