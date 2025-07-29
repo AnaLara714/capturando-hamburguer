@@ -57,6 +57,20 @@ const bandejaShape = new CANNON.Box(new CANNON.Vec3(10.5, 3.5, 5.6));
 const bandejaBody = new CANNON.Body({ mass: 0, shape: bandejaShape, material: trayMaterial });
 world.addBody(bandejaBody);
 
+let score = 0;
+const scoreElement = document.createElement('div');
+scoreElement.style.position = 'absolute';
+scoreElement.style.top = '20px';
+scoreElement.style.left = '20px';
+scoreElement.style.color = 'white';
+scoreElement.style.fontSize = '27px';
+scoreElement.style.fontFamily = 'Arial, sans-serif';
+scoreElement.innerText = 'Pontos: 0';
+document.body.appendChild(scoreElement);
+
+let audioGanha = new Audio("assets/sounds/ganhar.mp3");
+let audioPerde = new Audio("assets/sounds/perder.mp3");
+
 const hamburgerTypes = [
   { 
     type: 'normal', 
@@ -128,10 +142,24 @@ function criarHamburguer(typeInfo) {
     const hamburguerObject = hamburguers.find(h => h.body === hamburgerBody);
     if (!hamburguerObject) return;
 
-    if (event.body === bandejaBody) {
+    if (event.body === bandejaBody && !contabilizado) {
+        contabilizado = true; 
+        
+        score += hamburguerObject.typeInfo.points;
+        scoreElement.innerText = 'Pontos: ' + score;
+
         if (!objectsToRemove.includes(hamburguerObject)) {
             objectsToRemove.push(hamburguerObject);
         }
+
+        if (hamburguerObject.typeInfo.points > 0) {
+            audioGanha.currentTime = 0;
+            audioGanha.play();
+        } else if (hamburguerObject.typeInfo.points < 0) {
+            audioPerde.currentTime = 0;
+            audioPerde.play();
+        }
+
     } else if (event.body === groundBody) {
         if (!hamburguerObject.deathTimestamp) {
             hamburguerObject.deathTimestamp = Date.now();
@@ -147,11 +175,11 @@ function criarHamburguer(typeInfo) {
 
 function startGame() {
   setInterval(() => {
-    const randomIndex = Math.floor(Math.random() * hamburgerTypes.length);
-    const randomHamburgerType = hamburgerTypes[randomIndex];
-    criarHamburguer(randomHamburgerType);
+    const randomType = hamburgerTypes[Math.floor(Math.random() * hamburgerTypes.length)];
+    criarHamburguer(randomType);
   }, 1000);
 }
+
 
 function moveBandeja(event) {
   const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
