@@ -272,6 +272,21 @@ function criarHamburguer(typeInfo) {
   const scale = typeInfo.scale;
   model.scale.set(scale, scale, scale);
 
+  if (typeInfo.type === "penalidade") {
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+
+      child.material = child.material.clone();
+
+      if (child.material.color) {
+        child.material.color.multiplyScalar(2);
+      }
+    }
+  });
+}
+
   const hamburgerShape = new CANNON.Cylinder(2, 2, 1.5, 16);
   const hamburgerBody = new CANNON.Body({
     mass: 0.5,
