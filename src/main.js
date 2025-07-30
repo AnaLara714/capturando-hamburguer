@@ -11,45 +11,63 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.set(0, 15, 40);
+camera.position.set(0, 20, 30);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.style.margin = 0;
 document.body.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-directionalLight.position.set(5, 10, 7);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(10, 15, 10);
+directionalLight.castShadow = true;
 scene.add(directionalLight);
+
+const pointLight = new THREE.PointLight(0xffffff, 1, 30);
+pointLight.position.set(0, 5, 10);
+scene.add(pointLight);
 
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
   scene.background = texture;
 });
 
-// === CONFIGURAÇÕES DO HUD (ALTERADO) ===
+const controls = new OrbitControls(camera, renderer.domElement);
+
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enableZoom = true;
+controls.minDistance = 20;
+controls.maxDistance = 60;
+controls.maxPolarAngle = Math.PI / 2.2;
+controls.minPolarAngle = Math.PI / 3;
+controls.minAzimuthAngle = -Math.PI / 6;
+controls.maxAzimuthAngle = Math.PI / 6;
+controls.enablePan = false;
+
 const hudControls = {
-  gravidade: 9.82, // Valor positivo para o usuário
-  frequenciaQueda: 10, // 10 * 100ms = 1000ms (1s)
+  gravidade: 9.82,
+  frequenciaQueda: 10,
 };
 
 const world = new CANNON.World();
-// Usa o valor de controle, mas negativo, para a física
 world.gravity.set(0, -hudControls.gravidade, 0);
 
 const gui = new dat.GUI();
-// Controle de Gravidade (mostra valor positivo)
+
 gui
   .add(hudControls, "gravidade", 1, 25)
   .name("Gravidade")
   .onChange((value) => {
-    // Converte o valor positivo do slider para negativo para a física
     world.gravity.set(0, -value, 0);
   });
-// Controle de Frequência (em centenas de ms)
+
 gui
   .add(hudControls, "frequenciaQueda", 1, 30)
   .step(1)
@@ -65,7 +83,6 @@ gui
       }
     }, intervaloReal); // Usa o valor convertido
   });
-// ===========================================
 
 const groundMaterial = new CANNON.Material("groundMaterial");
 const hamburgerMaterial = new CANNON.Material("hamburgerMaterial");
@@ -77,6 +94,7 @@ world.addContactMaterial(
     restitution: 0.3,
   })
 );
+
 world.addContactMaterial(
   new CANNON.ContactMaterial(trayMaterial, hamburgerMaterial, {
     friction: 1.0,
@@ -89,6 +107,7 @@ const groundBody = new CANNON.Body({
   shape: new CANNON.Plane(),
   material: groundMaterial,
 });
+
 groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 world.addBody(groundBody);
 
@@ -100,6 +119,7 @@ loaderBandeja.load("assets/balde-pegar/scene.gltf", (gltf) => {
   model.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = true;
+    child.receiveShadow = true;
     }
   });
   bandeja.add(model);
@@ -374,6 +394,8 @@ function animate() {
     obj.mesh.position.copy(obj.body.position);
     obj.mesh.quaternion.copy(obj.body.quaternion);
   }
+
+  controls.update(); // necessário para damping funcionar
 
   renderer.render(scene, camera);
 }
