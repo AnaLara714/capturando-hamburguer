@@ -2,6 +2,11 @@
 
 Um jogo interativo 3D desenvolvido com **Three.js**, onde o jogador controla uma bandeja (balde) para capturar hambúrgueres que caem do topo da tela. Desvie dos hambúrgueres de penalidade e acumule o máximo de pontos!
 
+## Link para Visualização no Youtube
+```bash
+https://youtu.be/wsfgx6vmgC8
+```
+
 ## 🎮 Como jogar
 
 - **Controle a bandeja** com o mouse para movimentá-la horizontalmente.
