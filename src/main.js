@@ -14,19 +14,19 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 20, 30);
 camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.style.margin = 0;
 document.body.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(10, 15, 10);
-directionalLight.castShadow = true;
+directionalLight.castShadow = false;
 scene.add(directionalLight);
 
 const pointLight = new THREE.PointLight(0xffffff, 1, 30);
@@ -38,8 +38,9 @@ textureLoader.load("assets/imagem-rua/cenario-filme.jpg", function (texture) {
   scene.background = texture;
 });
 
-const controls = new OrbitControls(camera, renderer.domElement);
+const shadowTexture = textureLoader.load('https://threejs.org/examples/textures/shadow.png');
 
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.enableZoom = true;
@@ -60,20 +61,18 @@ const world = new CANNON.World();
 world.gravity.set(0, -hudControls.gravidade, 0);
 
 const gui = new dat.GUI();
-
 gui
   .add(hudControls, "gravidade", 1, 25)
   .name("Gravidade")
   .onChange((value) => {
     world.gravity.set(0, -value, 0);
   });
-
 gui
   .add(hudControls, "frequenciaQueda", 1, 30)
   .step(1)
   .name("Frequência (x100ms)")
   .onChange((value) => {
-    const intervaloReal = value * 100; // Converte para milissegundos
+    const intervaloReal = value * 100;
     clearInterval(spawnInterval);
     spawnInterval = setInterval(() => {
       if (jogoAtivo) {
@@ -81,7 +80,7 @@ gui
           hamburgerTypes[Math.floor(Math.random() * hamburgerTypes.length)];
         criarHamburguer(randomType);
       }
-    }, intervaloReal); // Usa o valor convertido
+    }, intervaloReal);
   });
 
 const groundMaterial = new CANNON.Material("groundMaterial");
@@ -107,9 +106,26 @@ const groundBody = new CANNON.Body({
   shape: new CANNON.Plane(),
   material: groundMaterial,
 });
-
 groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 world.addBody(groundBody);
+
+// Textura do chão carregada do seu arquivo local
+const woodTexture = textureLoader.load(
+  "assets/imagem-rua/chão.jpg"
+);
+
+woodTexture.wrapS = THREE.RepeatWrapping;
+woodTexture.wrapT = THREE.RepeatWrapping;
+woodTexture.repeat.set(10, 10);
+
+const groundGeometry = new THREE.PlaneGeometry(100, 100);
+const groundMeshMaterial = new THREE.MeshStandardMaterial({
+  map: woodTexture,
+});
+const groundMesh = new THREE.Mesh(groundGeometry, groundMeshMaterial);
+groundMesh.rotation.x = -Math.PI / 2;
+groundMesh.receiveShadow = false;
+scene.add(groundMesh);
 
 const bandeja = new THREE.Group();
 const loaderBandeja = new GLTFLoader();
@@ -119,7 +135,7 @@ loaderBandeja.load("assets/balde-pegar/scene.gltf", (gltf) => {
   model.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = true;
-    child.receiveShadow = true;
+      child.receiveShadow = true;
     }
   });
   bandeja.add(model);
@@ -145,7 +161,6 @@ scoreElement.style.fontFamily = "Arial, sans-serif";
 scoreElement.innerText = "Pontos: 0";
 document.body.appendChild(scoreElement);
 
-// === INTERFACE DE TEMPO ===
 let tempoRestante = 60;
 const tempoElement = document.createElement("div");
 tempoElement.style.position = "absolute";
@@ -154,10 +169,9 @@ tempoElement.style.left = "20px";
 tempoElement.style.color = "white";
 tempoElement.style.fontSize = "27px";
 tempoElement.style.fontFamily = "Arial, sans-serif";
-tempoElement.innerText = "Tempo: 60s";
+tempoElement.innerText = `Tempo: ${tempoRestante}s`;
 document.body.appendChild(tempoElement);
 
-// === TELA DE FIM DE JOGO ===
 const gameOverScreen = document.createElement("div");
 gameOverScreen.style.position = "absolute";
 gameOverScreen.style.top = "0";
@@ -191,7 +205,6 @@ function mostrarTelaFimDeJogo(pontuacaoFinal) {
 }
 
 let jogoAtivo = true;
-
 function atualizarCronometro() {
   if (!jogoAtivo) return;
 
@@ -204,7 +217,6 @@ function atualizarCronometro() {
     mostrarTelaFimDeJogo(score);
   }
 }
-
 setInterval(atualizarCronometro, 1000);
 
 let audioGanha = new Audio("assets/sounds/ganhar.mp3");
@@ -272,22 +284,32 @@ function criarHamburguer(typeInfo) {
   const scale = typeInfo.scale;
   model.scale.set(scale, scale, scale);
 
+  // Alteração da AnaLara para iluminar o hambúrguer de penalidade (Restaurada)
   if (typeInfo.type === "penalidade") {
-  model.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-
-      child.material = child.material.clone();
-
-      if (child.material.color) {
-        child.material.color.multiplyScalar(2);
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.material = child.material.clone();
+        if (child.material.color) {
+          child.material.color.multiplyScalar(1.5);
+        }
       }
-    }
-  });
-}
+    });
+  }
 
-  const hamburgerShape = new CANNON.Cylinder(2, 2, 1.5, 16);
+  const shadowGeo = new THREE.PlaneGeometry(5, 5);
+  const shadowMat = new THREE.MeshBasicMaterial({
+    map: shadowTexture,
+    transparent: true,
+    opacity: 0.6
+  });
+  const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+  shadowMesh.rotation.x = -Math.PI / 2;
+  shadowMesh.position.y = 0.01;
+  scene.add(shadowMesh);
+
+  // Otimização da Física (Esfera)
+  const hamburgerShape = new CANNON.Sphere(2);
+
   const hamburgerBody = new CANNON.Body({
     mass: 0.5,
     shape: hamburgerShape,
@@ -304,7 +326,6 @@ function criarHamburguer(typeInfo) {
   model.userData.body = hamburgerBody;
 
   let contabilizado = false;
-
   hamburgerBody.addEventListener("collide", (event) => {
     const hamburguerObject = hamburguers.find((h) => h.body === hamburgerBody);
     if (!hamburguerObject) return;
@@ -338,6 +359,7 @@ function criarHamburguer(typeInfo) {
   hamburguers.push({
     mesh: model,
     body: hamburgerBody,
+    shadow: shadowMesh,
     typeInfo: typeInfo,
     deathTimestamp: null,
   });
@@ -345,7 +367,6 @@ function criarHamburguer(typeInfo) {
 
 let spawnInterval;
 function startGame() {
-  // Inicia o intervalo usando o valor inicial convertido
   spawnInterval = setInterval(() => {
     if (jogoAtivo) {
       const randomType =
@@ -363,7 +384,6 @@ function moveBandeja(event) {
   const distance = -camera.position.z / dir.z;
   const pos = camera.position.clone().add(dir.multiplyScalar(distance));
   const limiteHorizontal = 35;
-
   bandeja.position.x = THREE.Math.clamp(
     pos.x,
     -limiteHorizontal,
@@ -373,7 +393,6 @@ function moveBandeja(event) {
 window.addEventListener("mousemove", moveBandeja);
 
 const clock = new THREE.Clock();
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -395,6 +414,7 @@ function animate() {
   for (const obj of objectsToRemove) {
     scene.remove(obj.mesh);
     world.removeBody(obj.body);
+    scene.remove(obj.shadow);
     const index = hamburguers.indexOf(obj);
     if (index !== -1) {
       hamburguers.splice(index, 1);
@@ -408,9 +428,22 @@ function animate() {
   for (const obj of hamburguers) {
     obj.mesh.position.copy(obj.body.position);
     obj.mesh.quaternion.copy(obj.body.quaternion);
+
+    if (obj.shadow) {
+      obj.shadow.position.x = obj.body.position.x;
+      obj.shadow.position.z = obj.body.position.z;
+
+      const altura = obj.body.position.y;
+      const opacidade = 0.7 - (altura / 60);
+      obj.shadow.material.opacity = THREE.Math.clamp(opacidade, 0, 0.7);
+
+      const tamanho = 1.2 - (altura / 70);
+      const scale = THREE.Math.clamp(tamanho, 0, 1);
+      obj.shadow.scale.set(scale, scale, scale);
+    }
   }
 
-  controls.update(); // necessário para damping funcionar
+  controls.update();
 
   renderer.render(scene, camera);
 }
